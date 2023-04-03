@@ -1,0 +1,16 @@
+{
+  "name": "kujira-testing",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "mintthemoon <mint@mintthemoon.xyz>",
+  "license": "MIT",
+  "dependencies": {
+    "chai": "^4.3.7",
+    "kujira": "github:Team-Kujira/kujira.js",
+    "mocha": "^10.2.0"
+  }
+}
