@@ -1,14 +1,16 @@
 const { CosmWasmClient } = require('@cosmjs/cosmwasm-stargate')
+const { Tendermint34Client } = require('@cosmjs/tendermint-rpc')
+const { ProposalStatus } = require('cosmjs-types/cosmos/gov/v1beta1/gov')
 const expect = require('chai').expect
 const k = require('kujira')
 
-describe('rpc health', () => k.RPCS['kaiyo-1'].map(
-  rpc => it(`${rpc} health`, () => 
-    fetch(`${rpc}/health`).then(res => {
-      expect(res.status).to.eq(200)
-    })
-  )
-))
+describe('rpc health', function() {
+    k.RPCS['kaiyo-1'].map(rpc => 
+        it(`${rpc} health`, () => fetch(`${rpc}/health`).then(res => {
+            expect(res.status).to.eq(200)
+        }))
+    )
+})
 
 describe('rpc order books', function() {
     k.RPCS['kaiyo-1'].map(rpc => {
@@ -29,4 +31,23 @@ describe('rpc order books', function() {
             }))
         })
     })
+})
+
+describe('rpc gov proposals', function() {
+    k.RPCS['kaiyo-1'].map(rpc => 
+        it(`${rpc} gov proposals`, () => Tendermint34Client.connect(rpc)
+            .then(client => k.kujiraQueryClient({client}))
+            .then(kujira => kujira.gov.proposals(ProposalStatus.PROPOSAL_STATUS_UNSPECIFIED, "", "", {
+                key: new Uint8Array(),
+                offset: 0,
+                limit: 5,
+                countTotal: true,
+                reverse: true
+            }))
+            .then(res => {
+                expect(res).to.have.property('proposals')
+                expect(res.proposals).to.have.lengthOf(5)
+            })
+        )
+    )
 })
