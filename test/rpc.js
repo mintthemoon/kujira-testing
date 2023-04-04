@@ -1,12 +1,40 @@
 const { CosmWasmClient } = require('@cosmjs/cosmwasm-stargate')
 const { Tendermint34Client } = require('@cosmjs/tendermint-rpc')
 const { ProposalStatus } = require('cosmjs-types/cosmos/gov/v1beta1/gov')
+const axios = require('axios')
 const expect = require('chai').expect
 const k = require('kujira')
 
 describe('rpc test suite', function() {
+    var rpcHeights = {} 
+    var minHeight = 0
+    it('get block heights', () => {
+        const heightsRes = k.RPCS['kaiyo-1'].map(rpc =>
+            axios({method: 'get', url: `${rpc}/block`, timeout: 1500}).then(res => {
+                expect(res.status).to.eq(200)
+                expect(res.data).to.have.property('result')
+                expect(res.data.result).to.have.property('block')
+                expect(res.data.result.block).to.have.property('header')
+                expect(res.data.result.block.header).to.have.property('height')
+                const height = Number(res.data.result.block.header.height)
+                expect(height).to.be.at.least(1)
+                expect(height % 1).to.eq(0)
+                rpcHeights[rpc] = height
+            })
+        )
+        return Promise.all(heightsRes).then(() => {
+            const heights = Object.values(rpcHeights)
+            expect(heights).is.not.empty
+            const maxHeight = Math.max(...heights)
+            minHeight = maxHeight - 3
+        })
+    })
     k.RPCS['kaiyo-1'].map(rpc => {
         describe(rpc, function() {
+            it(`height`, () => {
+                expect(rpcHeights).to.have.property(rpc)
+                expect(rpcHeights[rpc]).to.be.at.least(minHeight)
+            })
             it('health', () => fetch(`${rpc}/health`).then(res => {
                 expect(res.status).to.eq(200)
             }))
