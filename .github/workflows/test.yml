@@ -20,5 +20,5 @@ jobs:
       shell: bash
       run: |
         npm install
-        npm run report
+        npm run report || true
         npm run alert
