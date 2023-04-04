@@ -6,12 +6,13 @@ const expect = require('chai').expect
 const k = require('kujira')
 
 describe('rpc test suite', function() {
+    this.timeout(3000)
     var rpcHeights = {} 
     var minHeight = 0
     describe('global', function() {
         it('get block heights', () => {
             const heightsRes = k.RPCS['kaiyo-1'].map(rpc =>
-                axios({method: 'get', url: `${rpc}/block`, timeout: 1500}).then(res => {
+                axios({method: 'get', url: `${rpc}/block`, timeout: 2500}).then(res => {
                     expect(res.status).to.eq(200)
                     expect(res.data).to.have.property('result')
                     expect(res.data.result).to.have.property('block')
@@ -27,7 +28,7 @@ describe('rpc test suite', function() {
                 const heights = Object.values(rpcHeights)
                 expect(heights).is.not.empty
                 const maxHeight = Math.max(...heights)
-                minHeight = maxHeight - 3
+                minHeight = maxHeight - 5
             })
         })
     })

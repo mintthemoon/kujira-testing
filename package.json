@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "report": "mocha --reporter mochawesome --reporter-options reportDir=reports,reportFilename=report,reportTitle=Kujira-Testing",
+    "alert": "node src/alert.js ../reports/report.json"
   },
   "author": "mintthemoon <mint@mintthemoon.xyz>",
   "license": "MIT",
@@ -12,6 +14,8 @@
     "axios": "^1.3.4",
     "chai": "^4.3.7",
     "kujira": "github:Team-Kujira/kujira.js",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "mochawesome": "^7.1.3",
+    "mochawesome-report-generator": "^6.2.0"
   }
 }
