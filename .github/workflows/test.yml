@@ -1,0 +1,24 @@
+name: Run infra tests
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: source branch name
+        required: true
+        default: main
+  schedule:
+  - cron: "0 0 0/2 * *"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.branch }}
+    - name: runTests
+      shell: bash
+      run: |
+        npm install
+        npm run report
+        npm run alert
