@@ -1,9 +1,21 @@
 const { CosmWasmClient } = require('@cosmjs/cosmwasm-stargate')
-const { Tendermint34Client } = require('@cosmjs/tendermint-rpc')
+const { Tendermint34Client, WebsocketClient } = require('@cosmjs/tendermint-rpc')
 const { ProposalStatus } = require('cosmjs-types/cosmos/gov/v1beta1/gov')
 const axios = require('axios')
 const expect = require('chai').expect
 const k = require('kujira')
+
+const get_rpcs = () => {
+    if (process.env.RPCS) {
+        return process.env.RPCS.split(',')
+    }
+    if (process.env.KUJIRA_NETWORK) {
+        return k.RPCS[process.env.KUJIRA_NETWORK]
+    }
+    return k.RPCS["kaiyo-1"]
+}
+
+const RPCS = get_rpcs()
 
 describe('rpc test suite', function() {
     this.timeout(3000)
@@ -11,7 +23,7 @@ describe('rpc test suite', function() {
     var minHeight = 0
     describe('global', function() {
         it('get block heights', () => {
-            const heightsRes = k.RPCS['kaiyo-1'].map(rpc =>
+            const heightsRes = RPCS.map(rpc =>
                 axios({method: 'get', url: `${rpc}/block`, timeout: 2500}).then(res => {
                     expect(res.status).to.eq(200)
                     expect(res.data).to.have.property('result')
@@ -32,7 +44,7 @@ describe('rpc test suite', function() {
             })
         })
     })
-    k.RPCS['kaiyo-1'].map(rpc => {
+    RPCS.map(rpc => {
         describe(rpc, function() {
             it('latest height', () => {
                 expect(rpcHeights).to.have.property(rpc)
@@ -71,6 +83,40 @@ describe('rpc test suite', function() {
                     expect(res.proposals).to.have.lengthOf(5)
                 })
             )
+            it(`websockets`, function() {
+                if (!process.env.TEST_RPC_WS) {
+                    this.skip()
+                }
+                this.timeout(6000)
+                const client = new WebsocketClient(rpc)
+                const stream = client.listen({
+                        "jsonrpc": "2.0",
+                        "id": "3",
+                        "method": "subscribe",
+                        "params": {
+                            "query": "tm.event='NewBlock'"
+                        }
+                    })
+                return new Promise((resolve, reject) => {
+                    stream.subscribe({
+                        next: (res) => {
+                            expect(res).to.have.property('data')
+                            expect(res.data).to.have.property('value')
+                            expect(res.data.value).to.have.property('block')
+                            expect(res.data.value.block).to.have.property('header')
+                            expect(res.data.value.block.header).to.have.property('height')
+                            expect(Number(res.data.value.block.header.height)).to.be.at.least(minHeight)
+                            resolve()
+                        },
+                        error: (err) => {
+                            reject(err)
+                        },
+                        complete: () => {
+                            reject(new Error('stream completed with no block response'))
+                        }
+                    })
+                })
+            })
         })
     })
 })
